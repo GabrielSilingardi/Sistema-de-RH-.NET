@@ -1,68 +1,87 @@
-# DIO - Trilha .NET - Nuvem com Microsoft Azure
-www.dio.me
+# Sistema de RH — API de funcionários na Azure
 
-## Desafio de projeto
-Para este desafio, você precisará usar seus conhecimentos adquiridos no módulo de Nuvem com Microsoft Azure, da trilha .NET da DIO.
+API REST para cadastro e manutenção de funcionários, desenvolvida como solução para o [desafio .NET com Azure da DIO](https://github.com/digitalinnovationone/trilha-net-azure-desafio).
 
-## Contexto
-Você precisa construir um sistema de RH, onde para essa versão inicial do sistema o usuário poderá cadastrar os funcionários de uma empresa. 
+O projeto foi atualizado do **.NET 6.0 para .NET 10.0** e foi concebido para funcionar em nuvem, utilizando serviços da **Microsoft Azure** para hospedar a API, armazenar os dados dos funcionários e registrar o histórico de alterações.
 
-Essa cadastro precisa precisa ter um CRUD, ou seja, deverá permitir obter os registros, criar, salvar e deletar esses registros. A sua aplicação também precisa armazenar logs de toda e qualquer alteração que venha a ocorrer com um funcionário.
+## Funcionalidades
 
-## Premissas
-A sua aplicação deverá ser do tipo Web API, Azure Functions ou MVC, fique a vontade para implementar a solução que achar mais adequado.
+- Consulta de funcionário por identificador.
+- Cadastro, atualização e remoção de funcionários.
+- Registro das ações de inclusão, atualização e remoção no Azure Table Storage.
+- Documentação interativa dos endpoints com Swagger.
 
-A sua aplicação deverá ser implantada no Microsoft Azure, utilizando o App Service para a API, SQL Database para o banco relacional e Azure Table para armazenar os logs.
+## Arquitetura e serviços Azure
 
-A sua aplicação deverá armazenar os logs de todas as alterações que venha a acontecer com o funcionário. Os logs deverão serem armazenados em uma Azure Table.
+| Componente | Responsabilidade |
+|---|---|
+| ASP.NET Core Web API | Disponibiliza os endpoints REST e pode ser hospedada no Azure App Service. |
+| Azure SQL Database (SQL Server) | Armazena os registros de funcionários por meio do Entity Framework Core. |
+| Azure Table Storage | Armazena os logs das alterações. Cada log registra a ação, os dados do funcionário em JSON e os campos da entidade. |
 
-A sua classe principal, a classe Funcionario e a FuncionarioLog, deve ser a seguinte:
+A API usa a connection string `ConexaoPadrao` para acessar o banco SQL e `SAConnectionString` para acessar o Azure Table Storage. A tabela de logs é definida por `AzureTableName` e criada pela aplicação caso ainda não exista. Para uso em nuvem, configure essas opções com os dados dos recursos Azure correspondentes.
 
-![Diagrama da classe Funcionario](Imagens/diagrama_classe.png)
+## Tecnologias
 
-A classe FuncionarioLog é filha da classe Funcionario, pois o log terá as mesmas informações da Funcionario.
+- .NET 10.0 / ASP.NET Core
+- Entity Framework Core 10
+- SQL Server
+- Azure.Data.Tables
+- Swagger / OpenAPI
 
-Não se esqueça de gerar a sua migration para atualização no banco de dados.
+## Endpoints
 
-## Métodos esperados
-É esperado que você crie o seus métodos conforme a seguir:
+| Verbo | Rota | Descrição |
+|---|---|---|
+| `GET` | `/Funcionario/{id}` | Consulta um funcionário pelo identificador. |
+| `POST` | `/Funcionario` | Cadastra um funcionário e registra a inclusão. |
+| `PUT` | `/Funcionario/{id}` | Atualiza os dados de um funcionário e registra a alteração. |
+| `DELETE` | `/Funcionario/{id}` | Remove um funcionário e registra a remoção. |
 
-
-**Swagger**
-
-
-![Métodos Swagger](Imagens/swagger.png)
-
-
-**Endpoints**
-
-
-| Verbo  | Endpoint                | Parâmetro | Body               |
-|--------|-------------------------|-----------|--------------------|
-| GET    | /Funcionario/{id}       | id        | N/A                |
-| PUT    | /Funcionario/{id}       | id        | Schema Funcionario |
-| DELETE | /Funcionario/{id}       | id        | N/A                |
-| POST   | /Funcionario            | N/A       | Schema Funcionario |
-
-Esse é o schema (model) de Funcionario, utilizado para passar para os métodos que exigirem:
+Exemplo de corpo para criação ou atualização:
 
 ```json
 {
-  "nome": "Nome funcionario",
-  "endereco": "Rua 1234",
+  "nome": "Ana Silva",
+  "endereco": "Rua Exemplo, 123",
   "ramal": "1234",
-  "emailProfissional": "email@email.com",
+  "emailProfissional": "ana.silva@empresa.com",
   "departamento": "TI",
-  "salario": 1000,
-  "dataAdmissao": "2022-06-23T02:58:36.345Z"
+  "salario": 5000.00,
+  "dataAdmissao": "2024-01-15T00:00:00Z"
 }
 ```
 
-## Ambiente
-Este é um diagrama do ambiente que deverá ser montado no Microsoft Azure, utilizando o App Service para a API, SQL Database para o banco relacional e Azure Table para armazenar os logs.
+## Executar localmente
 
-![Diagrama da classe Funcionario](Imagens/diagrama_api.png)
+Pré-requisito: [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0).
 
+1. Configure as connection strings do banco SQL e do Azure Table Storage.
+2. Na pasta do projeto, restaure dependências e inicie a API:
 
-## Solução
-O código está pela metade, e você deverá dar continuidade obedecendo as regras descritas acima, para que no final, tenhamos um programa funcional. Procure pela palavra comentada "TODO" no código, em seguida, implemente conforme as regras acima, incluindo a sua publicação na nuvem.
+   ```powershell
+   dotnet restore
+   dotnet run
+   ```
+
+3. Abra o Swagger em `https://localhost:7090/swagger` (ou na URL informada pela aplicação).
+
+O arquivo `appsettings.json` contém valores vazios para as connection strings. Em desenvolvimento, elas podem ser fornecidas por *User Secrets* ou variáveis de ambiente, sem gravar credenciais no repositório. Os nomes das variáveis de ambiente seguem a hierarquia de configuração do .NET:
+
+```text
+ConnectionStrings__ConexaoPadrao
+ConnectionStrings__SAConnectionString
+ConnectionStrings__AzureTableName
+```
+
+## Banco de dados
+
+As migrations do Entity Framework Core estão no diretório `Migrations`. Com a connection string do banco configurada, aplique-as usando:
+
+```powershell
+dotnet ef database update
+```
+
+## Implantação na Azure
+
+Para executar em nuvem, publique a API no **Azure App Service** e configure no serviço as connection strings para o **Azure SQL Database** e o **Azure Table Storage**. A aplicação utiliza as configurações de ambiente do App Service para obter esses valores; não inclua credenciais em arquivos versionados.
